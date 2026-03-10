@@ -5,17 +5,25 @@ import apiClient from '../services/api'
 import ROUTE_PATHS from '../routes/paths'
 
 function formatDateForInput(dateValue) {
-  if (!dateValue) {
-    const today = new Date()
-    return today.toISOString().slice(0, 10)
-  }
+  const fallbackDate = new Date()
+  const parsedDate = dateValue ? new Date(dateValue) : fallbackDate
+  const safeDate = Number.isNaN(parsedDate.getTime()) ? fallbackDate : parsedDate
 
-  const parsedDate = new Date(dateValue)
-  if (Number.isNaN(parsedDate.getTime())) {
-    return new Date().toISOString().slice(0, 10)
-  }
+  const dateParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Etc/GMT+5',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .formatToParts(safeDate)
+    .reduce((acc, part) => {
+      if (part.type !== 'literal') {
+        acc[part.type] = part.value
+      }
+      return acc
+    }, {})
 
-  return parsedDate.toISOString().slice(0, 10)
+  return `${dateParts.year}-${dateParts.month}-${dateParts.day}`
 }
 
 function toOrderItem(product, qty) {
